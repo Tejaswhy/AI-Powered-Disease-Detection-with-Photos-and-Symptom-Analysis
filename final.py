@@ -641,68 +641,94 @@ if st.button("🔍 Analyze Health"):
             """,
             unsafe_allow_html=True
         )
+from streamlit_autorefresh import st_autorefresh
+from datetime import datetime
+
 # ==========================================
-# CUSTOM HEALTH REMINDER + NOTIFICATION
+# CUSTOM HEALTH REMINDER 
 # ==========================================
-st.subheader("⏰ Custom Health Reminder")
+with st.expander("⏰ Open Health Reminder", expanded=False):
 
-if "reminders" not in st.session_state:
-    st.session_state.reminders = []
+    st.subheader("⏰ Custom Health Reminder")
 
-if "sent_notifications" not in st.session_state:
-    st.session_state.sent_notifications = []
+    # Auto refresh every 10 seconds
+    st_autorefresh(interval=10000, key="health_reminder_refresh")
 
-reminder_text = st.text_input(
-    "Reminder Message",
-    placeholder="Take medicine / Drink water / Check sugar"
-)
-
-reminder_date = st.date_input("Reminder Date")
-reminder_time = st.time_input("Reminder Time")
-
-col_rem1, col_rem2 = st.columns(2)
-
-with col_rem1:
-    if st.button("➕ Save Reminder"):
-        if reminder_text.strip():
-            reminder_dt = datetime.combine(reminder_date, reminder_time)
-
-            st.session_state.reminders.append({
-                "text": reminder_text.strip(),
-                "datetime": reminder_dt.strftime("%Y-%m-%d %H:%M:%S")
-            })
-
-            st.success(
-                f"⏰ Reminder saved for {reminder_dt.strftime('%d %b %Y %I:%M %p')}"
-            )
-
-with col_rem2:
-    if st.button("🗑 Clear Reminders"):
+    if "reminders" not in st.session_state:
         st.session_state.reminders = []
+
+    if "sent_notifications" not in st.session_state:
         st.session_state.sent_notifications = []
-        st.success("All reminders cleared")
 
-current_time = datetime.now()
+    reminder_text = st.text_input(
+        "Reminder Message",
+        placeholder="Take medicine / Drink water / Check sugar"
+    )
 
-if st.session_state.reminders:
-    st.subheader("📋 Saved Reminders")
+    reminder_date = st.date_input("Reminder Date")
+    reminder_time = st.time_input("Reminder Time")
 
-    for idx, reminder in enumerate(st.session_state.reminders, 1):
-        reminder_dt = datetime.strptime(
-            reminder["datetime"],
-            "%Y-%m-%d %H:%M:%S"
-        )
+    col_rem1, col_rem2 = st.columns(2)
 
-        st.info(
-            f"{idx}. {reminder['text']} ⏰ {reminder_dt.strftime('%d %b %Y %I:%M %p')}"
-        )
+    with col_rem1:
+        if st.button("➕ Save Reminder"):
+            if reminder_text.strip():
+                reminder_dt = datetime.combine(
+                    reminder_date,
+                    reminder_time
+                )
 
-        if (
-            current_time >= reminder_dt and
-            reminder["datetime"] not in st.session_state.sent_notifications
+                st.session_state.reminders.append({
+                    "text": reminder_text.strip(),
+                    "datetime": reminder_dt.strftime(
+                        "%Y-%m-%d %H:%M:%S"
+                    )
+                })
+
+                st.toast(
+                    f"⏰ Reminder saved for "
+                    f"{reminder_dt.strftime('%I:%M %p')}",
+                    icon="✅"
+                )
+
+    with col_rem2:
+        if st.button("🗑 Clear Reminders"):
+            st.session_state.reminders = []
+            st.session_state.sent_notifications = []
+            st.toast("All reminders cleared", icon="🗑")
+
+    current_time = datetime.now()
+
+    if st.session_state.reminders:
+        st.subheader("📋 Saved Reminders")
+
+        for idx, reminder in enumerate(
+            st.session_state.reminders, 1
         ):
-            st.success(f"🔔 Reminder: {reminder['text']}")
-
-            st.session_state.sent_notifications.append(
-                reminder["datetime"]
+            reminder_dt = datetime.strptime(
+                reminder["datetime"],
+                "%Y-%m-%d %H:%M:%S"
             )
+
+            st.info(
+                f"{idx}. {reminder['text']} ⏰ "
+                f"{reminder_dt.strftime('%d %b %Y %I:%M %p')}"
+            )
+
+            if (
+                current_time >= reminder_dt and
+                reminder["datetime"]
+                not in st.session_state.sent_notifications
+            ):
+                st.toast(
+                    f"🔔 Reminder: {reminder['text']}",
+                    icon="⏰"
+                )
+
+                st.warning(
+                    f"Reminder Due: {reminder['text']}"
+                )
+
+                st.session_state.sent_notifications.append(
+                    reminder["datetime"]
+                )
