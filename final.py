@@ -116,6 +116,62 @@ transform = transforms.Compose([
 
 weights = torchvision.models.EfficientNet_B0_Weights.DEFAULT
 
+import torch.nn as nn
+from torchvision.models import efficientnet_b0
+
+# ==========================================
+# MODEL CLASSES
+# ==========================================
+class EyeClassifier(nn.Module):
+    def __init__(self, num_classes):
+        super(EyeClassifier, self).__init__()
+
+        self.model = efficientnet_b0(weights=weights)
+
+        in_features = self.model.classifier[1].in_features
+
+        self.model.classifier[1] = nn.Linear(
+            in_features,
+            num_classes
+        )
+
+    def forward(self, x):
+        return self.model(x)
+
+
+class TongueClassifier(nn.Module):
+    def __init__(self, num_classes):
+        super(TongueClassifier, self).__init__()
+
+        self.model = efficientnet_b0(weights=weights)
+
+        in_features = self.model.classifier[1].in_features
+
+        self.model.classifier[1] = nn.Linear(
+            in_features,
+            num_classes
+        )
+
+    def forward(self, x):
+        return self.model(x)
+
+
+class SkinClassifier(nn.Module):
+    def __init__(self, num_classes):
+        super(SkinClassifier, self).__init__()
+
+        self.model = efficientnet_b0(weights=weights)
+
+        in_features = self.model.classifier[1].in_features
+
+        self.model.classifier[1] = nn.Linear(
+            in_features,
+            num_classes
+        )
+
+    def forward(self, x):
+        return self.model(x)
+
 # ==========================================
 # SYMPTOM PREPROCESSOR
 # ==========================================
