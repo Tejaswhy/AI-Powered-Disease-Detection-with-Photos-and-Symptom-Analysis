@@ -58,14 +58,26 @@ device = torch.device(
 
 # ==========================================
 # PATHS
-# ==========================================
-eye_path = Path("/Users/tejasy/Documents/health bgs/eye_model.pth")
-tongue_path = Path("/Users/tejasy/Documents/health bgs/best_tongue_model.pth")
-skin_path = Path("/Users/tejasy/Documents/health bgs/best_skin_resnet50_model.pth")
-save_dir = Path("/Users/tejasy/Documents/health bgs/health_model")
-patient_history_dir = Path("/Users/tejasy/Documents/health bgs/patient_history")
-patient_history_dir.mkdir(parents=True, exist_ok=True)
+from pathlib import Path
 
+# ==========================================
+# PATHS
+# ==========================================
+BASE_DIR = Path(__file__).parent
+
+eye_path = BASE_DIR / "eye_model.pth"
+tongue_path = BASE_DIR / "best_tongue_model.pth"
+skin_path = BASE_DIR / "best_skin_resnet50_model.pth"
+
+save_dir = BASE_DIR / "health_model"
+yolo_path = BASE_DIR / "health_model" / "best.pt"
+
+patient_history_dir = BASE_DIR / "patient_history"
+cropped_output_dir = BASE_DIR / "cropped_outputs"
+
+# Create folders if they don't exist
+patient_history_dir.mkdir(parents=True, exist_ok=True)
+cropped_output_dir.mkdir(parents=True, exist_ok=True)
 # ==========================================
 # TRANSFORM
 # ==========================================
