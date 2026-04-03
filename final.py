@@ -146,7 +146,7 @@ def preprocess_symptoms(text):
     for old, new in replacements.items():
         text = text.replace(old, new)
 
-    return text
+    return symptoms
 import torch.nn as nn
 from torchvision.models import efficientnet_b0
 
