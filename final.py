@@ -1,3 +1,4 @@
+from safetensors.torch import load_file
 import streamlit as st
 from ultralytics import YOLO
 import numpy as np
@@ -227,15 +228,13 @@ def load_models():
     local_files_only=True,
     use_fast=True
 )
-
-    from transformers import AutoConfig, AutoModelForSequenceClassification
-
     config = AutoConfig.from_pretrained(str(save_dir))
 
     disease_model = AutoModelForSequenceClassification.from_config(config)
-    disease_model.load_state_dict(
-    torch.load(save_dir / "model.safetensors", map_location=device)
-    )
+
+    state_dict = load_file(str(save_dir / "model.safetensors"))
+
+    disease_model.load_state_dict(state_dict)
     disease_model = disease_model.to(device)
 
     disease_model.eval()
