@@ -227,9 +227,15 @@ def load_models():
     use_fast=True
 )
 
-    disease_model = AutoModelForSequenceClassification.from_pretrained(
-    str(save_dir),
-    local_files_only=True).to(device)
+    from transformers import AutoConfig, AutoModelForSequenceClassification
+
+    config = AutoConfig.from_pretrained(str(save_dir))
+
+    disease_model = AutoModelForSequenceClassification.from_config(config)
+    disease_model.load_state_dict(
+    torch.load(save_dir / "model.safetensors", map_location=device)
+    )
+    disease_model = disease_model.to(device)
 
     disease_model.eval()
 
