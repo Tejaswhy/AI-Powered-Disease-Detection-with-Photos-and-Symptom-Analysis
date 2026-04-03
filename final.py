@@ -123,18 +123,21 @@ transform = transforms.Compose([
 def preprocess_symptoms(text):
     text = text.lower().strip()
 
-    replacements = {
-        "feverish": "fever",
-        "head pain": "headache",
-        "body pain": "body ache",
-        "weak": "weakness",
-        "tired": "fatigue",
-        "throwing up": "vomiting",
-        "cold": "cold symptoms",
-        "breathing issue": "shortness of breath",
-        "sugar": "diabetes symptoms",
-        "thyroid issue": "thyroid symptoms"
-    }
+    skin_labels = [
+    "Actinic keratosis",
+    "Atopic Dermatitis",
+    "Benign keratosis",
+    "Dermatofibroma",
+    "Melanocytic nevus",
+    "Melanoma",
+    "Squamous cell carcinoma",
+    "Tinea Ringworm Candidiasis",
+    "Vascular lesion",
+    "Basal cell carcinoma",
+    "Eczema",
+    "Psoriasis",
+    "Warts Molluscum"
+]
 
     for old, new in replacements.items():
         text = text.replace(old, new)
@@ -214,7 +217,7 @@ def load_models():
     tongue_model.load_state_dict(torch.load(tongue_path, map_location=device))
     tongue_model.eval()
 
-    skin_model = SkinClassifier(9).to(device)
+    skin_model = SkinClassifier(13).to(device)
     skin_model.load_state_dict(torch.load(skin_path, map_location=device))
     skin_model.eval()
 
