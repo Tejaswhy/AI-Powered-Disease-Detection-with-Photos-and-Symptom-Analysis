@@ -1,4 +1,5 @@
 import streamlit as st
+import numpy as np
 from PIL import Image
 from pathlib import Path
 import torch
@@ -9,7 +10,6 @@ from torchvision import transforms
 import pickle
 import torch.nn.functional as F
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
-from notifypy import Notify
 from datetime import datetime
 
 # ==========================================
@@ -58,6 +58,10 @@ device = torch.device(
 
 # ==========================================
 # PATHS
+# ==========================================
+# ==========================================
+# PATHS
+# ==========================================
 from pathlib import Path
 
 # ==========================================
@@ -78,6 +82,27 @@ cropped_output_dir = BASE_DIR / "cropped_outputs"
 # Create folders if they don't exist
 patient_history_dir.mkdir(parents=True, exist_ok=True)
 cropped_output_dir.mkdir(parents=True, exist_ok=True)
+# ==========================================
+# IMAGE CROP + SAVE
+# ==========================================
+def crop_center(img, crop_width=180, crop_height=180):
+    width, height = img.size
+
+    left = max((width - crop_width) // 2, 0)
+    top = max((height - crop_height) // 2, 0)
+    right = min(left + crop_width, width)
+    bottom = min(top + crop_height, height)
+
+    return img.crop((left, top, right, bottom))
+
+
+def save_cropped_image(img, path):
+    img.save(path)
+
+
+def compare_features(old_feat, new_feat):
+    similarity = nnf.cosine_similarity(old_feat, new_feat).item()
+    return similarity
 # ==========================================
 # TRANSFORM
 # ==========================================
@@ -202,8 +227,8 @@ eye_model, tongue_model, skin_model, tokenizer, disease_model, le = load_models(
 eye_labels = [
     "cataract",
     "fever_water_eyes",
-    "thyroid_signs",
-    "healthy_eyes",
+    "THYROID EYES",
+    "HEALTHY EYES",
     "uveitis"
 ]
 
@@ -255,24 +280,136 @@ def extract_features(model, image_tensor):
 def compare_features(old_feat, new_feat):
     similarity = nnf.cosine_similarity(old_feat, new_feat).item()
     return similarity
+
+# ==========================================
+# LOAD YOLO MODEL
+# ==========================================
+@st.cache_resource
+def load_yolo_model():
+    try:
+        from ultralytics import YOLO
+        return YOLO(str(yolo_path))
+    except Exception as e:
+        st.error(f"YOLO loading failed: {e}")
+        return None
+
+
+yolo_model = load_yolo_model()
+
+
+# ==========================================
+# EYE: YOLO DETECT + RIGHT EYE CROP
+# ==========================================
+def detect_right_eye_with_yolo(pil_img, target_class="eye"):
+    img_np = np.array(pil_img)
+
+    results = yolo_model.predict(
+        source=img_np,
+        conf=0.10,
+        verbose=False
+    )
+
+    if len(results) == 0 or len(results[0].boxes) == 0:
+        st.warning("No eye area detected, using center crop")
+        return crop_center(pil_img)
+
+    boxes = results[0].boxes.xyxy.cpu().numpy()
+    classes = results[0].boxes.cls.cpu().numpy()
+
+    matched_boxes = []
+
+    for box, cls in zip(boxes, classes):
+        class_name = yolo_model.names[int(cls)].lower()
+
+        if target_class.lower() in class_name:
+            matched_boxes.append(box)
+
+    if not matched_boxes:
+        st.warning("Eye class not found, using first box")
+        matched_boxes = [boxes[0]]
+
+    x1, y1, x2, y2 = map(int, matched_boxes[0])
+
+    full_eye_area_crop = pil_img.crop((x1, y1, x2, y2))
+
+    width, height = full_eye_area_crop.size
+
+    # RIGHT HALF ONLY
+    right_eye_crop = full_eye_area_crop.crop(
+        (width // 2, 0, width, height)
+    )
+
+    st.image(
+        full_eye_area_crop,
+        caption="Eye Area",
+        width=250
+    )
+    return right_eye_crop
+
+
+# ==========================================
+# TONGUE: YOLO DETECT + TONGUE AREA CROP
+# ==========================================
+def detect_and_crop_tongue_with_yolo(pil_img, target_class="tongue"):
+    img_np = np.array(pil_img)
+
+    results = yolo_model.predict(
+        source=img_np,
+        conf=0.10,
+        verbose=False
+    )
+
+    st.write("YOLO tongue detection running...")
+
+    if len(results) == 0 or len(results[0].boxes) == 0:
+        st.warning("No tongue detected by YOLO")
+        return pil_img
+
+    boxes = results[0].boxes.xyxy.cpu().numpy()
+    classes = results[0].boxes.cls.cpu().numpy()
+
+    matched_boxes = []
+
+    for box, cls in zip(boxes, classes):
+        class_name = yolo_model.names[int(cls)].lower()
+
+        if target_class.lower() in class_name:
+            matched_boxes.append(box)
+
+    if not matched_boxes:
+        st.warning("⚠ Tongue class not found, using original image")
+        return pil_img
+
+    # use first tongue box
+    x1, y1, x2, y2 = map(int, matched_boxes[0])
+
+    tongue_crop = pil_img.crop((x1, y1, x2, y2))
+
+    st.image(
+        tongue_crop,
+        caption=" Tongue Area",
+        width=250
+    )
+
+    return tongue_crop
 # ==========================================
 # UI
 # ==========================================
 col1, col2 = st.columns(2)
 
 with col1:
-    eye_image = st.camera_input("📸 Take Eye Picture")
+    eye_image = st.camera_input("Take Eye Picture")
 
 with col2:
-    tongue_image = st.camera_input("👅 Take Tongue Picture")
+    tongue_image = st.camera_input("Take Tongue Picture")
 
-skin_image = st.file_uploader("🖼 Upload Skin Image", type=["jpg", "jpeg", "png"])
+skin_image = st.file_uploader("Upload Skin Image", type=["jpg", "jpeg", "png"])
 
 symptoms = st.text_area(
-    "📝 Enter Symptoms",
+    "Enter Symptoms",
     placeholder="fever, headache, weakness, body pain..."
 )
-st.subheader("🆔 Patient History Tracking")
+st.subheader("🆔Patient History Tracking")
 
 patient_id = st.text_input(
     "Enter Patient ID",
@@ -296,16 +433,20 @@ if st.button("🔍 Analyze Health"):
     # =====================
     if eye_image:
         img = Image.open(eye_image).convert("RGB")
-        st.image(img, caption="Current Eye Image", width=250)
 
-        tensor = transform(img).unsqueeze(0).to(device)
+        cropped_eye = detect_right_eye_with_yolo(img)
+
+        eye_crop_path = cropped_output_dir / f"{patient_id}_cropped_eye.jpg"
+    
+
+        tensor = transform(cropped_eye).unsqueeze(0).to(device)
 
         with torch.no_grad():
             probs = torch.softmax(eye_model(tensor), dim=1)
             pred = torch.argmax(probs, dim=1).item()
 
         eye_pred_label = eye_labels[pred]
-        st.success(f"👁 Eye: {eye_pred_label}")
+        st.success(f"Eye: {eye_pred_label}")
 
         eye_features = extract_features(eye_model, tensor)
 
@@ -319,35 +460,39 @@ if st.button("🔍 Analyze Health"):
                 eye_features
             )
 
-            st.info(f"📊 Eye Similarity: {similarity:.2f}")
+            st.info(f"Eye Similarity: {similarity:.2f}")
 
             if similarity < 0.80:
                 st.warning("⚠ Noticeable eye changes detected")
             else:
-                st.success("✅ Eye condition similar to previous")
+                st.success(" Eye condition similar to previous")
 
         torch.save(eye_features, eye_feature_path)
 
-    # =====================
-    # TONGUE
-    # =====================
+# =====================
+# TONGUE
+# =====================
     if tongue_image:
         img = Image.open(tongue_image).convert("RGB")
-        st.image(img, caption="Current Tongue Image", width=250)
 
-        tensor = transform(img).unsqueeze(0).to(device)
+        cropped_tongue = detect_and_crop_tongue_with_yolo(img)
+
+        tongue_path_save = cropped_output_dir / f"{patient_id}_tongue.jpg"
+        save_cropped_image(img, tongue_path_save)
+
+        tongue_crop_path = cropped_output_dir / f"{patient_id}_cropped_tongue.jpg"
+        save_cropped_image(cropped_tongue, tongue_crop_path)
+
+        tensor = transform(cropped_tongue).unsqueeze(0).to(device)
 
         with torch.no_grad():
             probs = torch.softmax(tongue_model(tensor), dim=1)
             pred = torch.argmax(probs, dim=1).item()
 
         tongue_pred_label = tongue_labels[pred]
-        st.success(f"👅 Tongue: {tongue_pred_label}")
+        st.success(f" Tongue: {tongue_pred_label}")
 
-        tongue_features = extract_features(
-            tongue_model,
-            tensor
-        )
+        tongue_features = extract_features(tongue_model, tensor)
 
         tongue_feature_path = patient_folder / "tongue_features.pt"
 
@@ -359,15 +504,9 @@ if st.button("🔍 Analyze Health"):
                 tongue_features
             )
 
-            st.info(f"📊 Tongue Similarity: {similarity:.2f}")
-
-            if similarity < 0.80:
-                st.warning("⚠ Noticeable tongue changes detected")
-            else:
-                st.success("✅ Tongue condition similar")
+            st.info(f"Tongue Similarity: {similarity:.2f}")
 
         torch.save(tongue_features, tongue_feature_path)
-
     # =====================
     # SKIN
     # =====================
@@ -382,7 +521,7 @@ if st.button("🔍 Analyze Health"):
             pred = torch.argmax(probs, dim=1).item()
 
         skin_pred_label = skin_labels[pred]
-        st.success(f"🧴 Skin: {skin_pred_label}")
+        st.success(f" Skin: {skin_pred_label}")
 
         skin_features = extract_features(
             skin_model,
@@ -399,12 +538,12 @@ if st.button("🔍 Analyze Health"):
                 skin_features
             )
 
-            st.info(f"📊 Skin Similarity: {similarity:.2f}")
+            st.info(f"Skin Similarity: {similarity:.2f}")
 
             if similarity < 0.80:
                 st.warning("⚠ Noticeable skin changes detected")
             else:
-                st.success("✅ Skin similar to previous")
+                st.success(" Skin similar to previous")
 
         torch.save(skin_features, skin_feature_path)
 
@@ -419,7 +558,7 @@ if st.button("🔍 Analyze Health"):
             skin_pred_label
         )
 
-        st.info(f"🧠 AI Context: {medical_context}")
+        st.info(f"AI Context: {medical_context}")
 
         inputs = tokenizer(
             medical_context,
@@ -513,10 +652,7 @@ if st.session_state.reminders:
             current_time >= reminder_dt and
             reminder["datetime"] not in st.session_state.sent_notifications
         ):
-            notification = Notify()
-            notification.title = "🩺 Health Reminder"
-            notification.message = reminder["text"]
-            notification.send()
+            st.success(f"🔔 Reminder: {reminder['text']}")
 
             st.session_state.sent_notifications.append(
                 reminder["datetime"]
