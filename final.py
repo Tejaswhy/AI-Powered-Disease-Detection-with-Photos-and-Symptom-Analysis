@@ -6,6 +6,7 @@ from transformers import (
 )
 
 import streamlit as st
+import torch.nn.functional as F
 from ultralytics import YOLO
 import numpy as np
 from PIL import Image
@@ -323,9 +324,12 @@ def extract_features(model, image_tensor):
 
 
 def compare_features(old_feat, new_feat):
-    similarity = nnf.cosine_similarity(old_feat, new_feat).item()
-    return similarity
+    similarity = F.cosine_similarity(
+        old_feat,
+        new_feat
+    ).item()
 
+    return similarity
 # ==========================================
 # LOAD YOLO MODEL
 # ==========================================
@@ -725,8 +729,7 @@ with st.expander("⏰ Open Health Reminder", expanded=False):
                 })
 
                 st.toast(
-                    f"⏰ Reminder saved for {hour}:{minute:02d} {period}",
-                    icon="✅"
+                    f"Reminder saved for {hour}:{minute:02d} {period}",
                 )
 
     with col_rem2:
