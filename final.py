@@ -227,11 +227,9 @@ def load_models():
     use_fast=True
 )
 
-    disease_model = AutoModelForSequenceClassification.from_pretrained(
-        str(save_dir),
-        local_files_only=True,
-        use_safetensors=True
-    ).to(device)
+   disease_model = AutoModelForSequenceClassification.from_pretrained(
+    str(save_dir),
+    local_files_only=True).to(device)
 
     disease_model.eval()
 
