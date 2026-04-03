@@ -226,16 +226,18 @@ def load_models():
     skin_model.eval()
 
     tokenizer = AutoTokenizer.from_pretrained(
-    str(save_dir),
-    local_files_only=True,
-    use_fast=True
-)
+        str(save_dir),
+        local_files_only=True,
+        use_fast=True
+    )
+
     config = AutoConfig.from_pretrained(str(save_dir))
+
+    disease_model = AutoModelForSequenceClassification.from_config(config)
+
     state_dict = load_file(str(save_dir / "model.safetensors"))
 
-# Convert TensorFlow-style LayerNorm names
-    state_dict = load_file(str(save_dir / "model.safetensors"))
-
+    # Convert TensorFlow-style LayerNorm names
     new_state_dict = {}
     for key, value in state_dict.items():
         new_key = key.replace(".gamma", ".weight").replace(".beta", ".bias")
@@ -243,7 +245,6 @@ def load_models():
 
     disease_model.load_state_dict(new_state_dict, strict=False)
     disease_model = disease_model.to(device)
-
     disease_model.eval()
 
     with open(save_dir / "label_encoder.pkl", "rb") as f:
