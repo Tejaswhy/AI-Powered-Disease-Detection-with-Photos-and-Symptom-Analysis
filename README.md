@@ -1,12 +1,10 @@
 # AI-Powered-Disease-Detection-with-Photos-and-Symptom-Analysis
 #Hackstreet Boys
 
-Project Demo video:https://lnkd.in/gH-tnicR
+Project Demo video:https://github-production-user-asset-6210df.s3.amazonaws.com/201115426/573503357-2983c720-4e6c-4caa-a53a-ce2d51260c15.mp4?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAVCODYLSA53PQK4ZA%2F20260403%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20260403T214650Z&X-Amz-Expires=300&X-Amz-Signature=57c1b8d16eefe79cbfe6337a560b406113f09bad819d4b7dae218b1b5a8bfe4a&X-Amz-SignedHeaders=host
 
 Successfully deployed my AI model, and it’s performing well. Looking forward to adding more improvements and new features soon.
-check it out:https://lnkd.in/g7wi9TpW
-
-
+check it out:https://whyhealth.streamlit.app/
 
 
 Health AI Diagnosis and Patient Monitoring System
