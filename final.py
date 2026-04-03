@@ -185,14 +185,19 @@ class SkinClassifier(nn.Module):
     def __init__(self, num_classes):
         super().__init__()
 
-        self.model = efficientnet_b0(weights=None)
-
-        in_features = self.model.classifier[1].in_features
+        self.model = models.efficientnet_b0(pretrained=False)
 
         self.model.classifier = nn.Sequential(
+            nn.Dropout(0.3),
+            nn.Linear(1280, 512),
+            nn.BatchNorm1d(512),
+            nn.ReLU(),
             nn.Dropout(0.2),
-            nn.Linear(in_features, num_classes)
+            nn.Linear(512, num_classes)
         )
+
+    def forward(self, x):
+        return self.model(x)
 
     def forward(self, x):
         return self.model(x)
