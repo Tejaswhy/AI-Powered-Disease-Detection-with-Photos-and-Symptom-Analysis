@@ -188,9 +188,6 @@ class SkinClassifier(torch.nn.Module):
     def forward(self, x):
         return self.model(x)
 
-# ==========================================
-# LOAD MODELS
-# ==========================================
 @st.cache_resource
 def load_models():
     eye_model = EyeClassifier(6).to(device)
@@ -201,25 +198,9 @@ def load_models():
     tongue_model.load_state_dict(torch.load(tongue_path, map_location=device))
     tongue_model.eval()
 
-    skin_model = SkinClassifier(13).to(device)
-    skin_model.load_state_dict(
-        torch.load(skin_path, map_location=device),
-        strict=False
-    )
+    skin_model = SkinClassifier(9).to(device)
+    skin_model.load_state_dict(torch.load(skin_path, map_location=device))
     skin_model.eval()
-
-    tokenizer = AutoTokenizer.from_pretrained(save_dir, use_fast=False)
-    disease_model = AutoModelForSequenceClassification.from_pretrained(save_dir).to(device)
-    disease_model.eval()
-
-    with open(save_dir / "label_encoder.pkl", "rb") as f:
-        le = pickle.load(f)
-
-    return eye_model, tongue_model, skin_model, tokenizer, disease_model, le
-
-
-eye_model, tongue_model, skin_model, tokenizer, disease_model, le = load_models()
-
 # ==========================================
 # LABELS
 # ==========================================
@@ -229,6 +210,7 @@ eye_labels = [
     "THYROID EYES",
     "HEALTHY EYES",
     "uveitis"
+    "conjunctivitis"
 ]
 
 tongue_labels = [
