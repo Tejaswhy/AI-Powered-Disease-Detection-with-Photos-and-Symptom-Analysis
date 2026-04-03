@@ -438,13 +438,11 @@ def detect_and_crop_tongue_with_yolo(pil_img, target_class="tongue"):
 # ==========================================
 # UI
 # ==========================================
-col1, col2 = st.columns(2)
+st.subheader("Capture Images")
 
-with col1:
-    eye_image = st.camera_input("Take Eye Picture")
+eye_image = st.camera_input("Take Eye Picture")
 
-with col2:
-    tongue_image = st.camera_input("Take Tongue Picture")
+tongue_image = st.camera_input("Take Tongue Picture")
 
 skin_image = st.file_uploader("Upload Skin Image", type=["jpg", "jpeg", "png"])
 
@@ -452,7 +450,7 @@ symptoms = st.text_area(
     "Enter Symptoms",
     placeholder="fever, headache, weakness, body pain..."
 )
-st.subheader("🆔Patient History Tracking")
+st.subheader("Patient History Tracking")
 
 patient_id = st.text_input(
     "Enter Patient ID",
