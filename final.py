@@ -231,12 +231,17 @@ def load_models():
     use_fast=True
 )
     config = AutoConfig.from_pretrained(str(save_dir))
-
-    disease_model = AutoModelForSequenceClassification.from_config(config)
-
     state_dict = load_file(str(save_dir / "model.safetensors"))
 
-    disease_model.load_state_dict(state_dict)
+# Convert TensorFlow-style LayerNorm names
+    state_dict = load_file(str(save_dir / "model.safetensors"))
+
+    new_state_dict = {}
+    for key, value in state_dict.items():
+        new_key = key.replace(".gamma", ".weight").replace(".beta", ".bias")
+        new_state_dict[new_key] = value
+
+    disease_model.load_state_dict(new_state_dict, strict=False)
     disease_model = disease_model.to(device)
 
     disease_model.eval()
@@ -245,7 +250,8 @@ def load_models():
         le = pickle.load(f)
 
     return eye_model, tongue_model, skin_model, tokenizer, disease_model, le
-    
+
+
 eye_model, tongue_model, skin_model, tokenizer, disease_model, le = load_models()
 # ==========================================
 # LABELS
