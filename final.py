@@ -143,51 +143,6 @@ def preprocess_symptoms(text):
 # ==========================================
 # MODELS
 # ==========================================
-class EyeClassifier(torch.nn.Module):
-    def __init__(self, num_classes):
-        super().__init__()
-        self.model = torchvision.models.efficientnet_b0(weights=weights)
-        self.model.classifier = torch.nn.Sequential(
-            torch.nn.Dropout(0.2),
-            torch.nn.Linear(1280, num_classes)
-        )
-
-    def forward(self, x):
-        return self.model(x)
-
-
-class TongueClassifier(torch.nn.Module):
-    def __init__(self, num_classes):
-        super().__init__()
-        self.model = torchvision.models.efficientnet_b0(weights=weights)
-        self.model.classifier = torch.nn.Sequential(
-            torch.nn.Dropout(0.2),
-            torch.nn.Linear(1280, 512),
-            torch.nn.ReLU(),
-            torch.nn.Dropout(0.2),
-            torch.nn.Linear(512, num_classes)
-        )
-
-    def forward(self, x):
-        return self.model(x)
-
-
-class SkinClassifier(torch.nn.Module):
-    def __init__(self, num_classes):
-        super().__init__()
-        self.model = torchvision.models.efficientnet_b0(weights=weights)
-        self.model.classifier = torch.nn.Sequential(
-            torch.nn.Dropout(0.4),
-            torch.nn.Linear(1280, 512),
-            torch.nn.BatchNorm1d(512),
-            torch.nn.ReLU(),
-            torch.nn.Dropout(0.3),
-            torch.nn.Linear(512, num_classes)
-        )
-
-    def forward(self, x):
-        return self.model(x)
-
 @st.cache_resource
 def load_models():
     eye_model = EyeClassifier(6).to(device)
@@ -201,6 +156,27 @@ def load_models():
     skin_model = SkinClassifier(9).to(device)
     skin_model.load_state_dict(torch.load(skin_path, map_location=device))
     skin_model.eval()
+
+    tokenizer = AutoTokenizer.from_pretrained(
+        str(save_dir),
+        local_files_only=True,
+        use_fast=False
+    )
+
+    disease_model = AutoModelForSequenceClassification.from_pretrained(
+        str(save_dir),
+        local_files_only=True,
+        use_safetensors=True
+    ).to(device)
+
+    disease_model.eval()
+
+    with open(save_dir / "label_encoder.pkl", "rb") as f:
+        le = pickle.load(f)
+
+    return eye_model, tongue_model, skin_model, tokenizer, disease_model, le
+    
+eye_model, tongue_model, skin_model, tokenizer, disease_model, le = load_models()
 # ==========================================
 # LABELS
 # ==========================================
@@ -209,7 +185,7 @@ eye_labels = [
     "fever_water_eyes",
     "THYROID EYES",
     "HEALTHY EYES",
-    "uveitis"
+    "uveitis",
     "conjunctivitis"
 ]
 
