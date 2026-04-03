@@ -438,11 +438,23 @@ def detect_and_crop_tongue_with_yolo(pil_img, target_class="tongue"):
 # ==========================================
 # UI
 # ==========================================
-st.subheader("Capture Images")
+st.subheader("📷 Capture Image")
 
-eye_image = st.camera_input("Take Eye Picture")
+scan_type = st.selectbox(
+    "Select image type",
+    ["Eye", "Tongue"]
+)
 
-tongue_image = st.camera_input("Take Tongue Picture")
+captured_image = st.camera_input(f"Take {scan_type} Picture")
+
+eye_image = None
+tongue_image = None
+
+if captured_image is not None:
+    if scan_type == "Eye":
+        eye_image = captured_image
+    else:
+        tongue_image = captured_image
 
 skin_image = st.file_uploader("Upload Skin Image", type=["jpg", "jpeg", "png"])
 
