@@ -127,26 +127,35 @@ transform = transforms.Compose([
 def preprocess_symptoms(text):
     text = text.lower().strip()
 
+    replacements = {
+        "feverish": "fever",
+        "cold": "cough",
+        "head pain": "headache",
+        "stomach pain": "abdominal pain",
+        "eye redness": "red eyes",
+        "sore throat": "throat pain"
+    }
+
     skin_labels = [
-    "Actinic keratosis",
-    "Atopic Dermatitis",
-    "Benign keratosis",
-    "Dermatofibroma",
-    "Melanocytic nevus",
-    "Melanoma",
-    "Squamous cell carcinoma",
-    "Tinea Ringworm Candidiasis",
-    "Vascular lesion",
-    "Basal cell carcinoma",
-    "Eczema",
-    "Psoriasis",
-    "Warts Molluscum"
-]
+        "Actinic keratosis",
+        "Atopic Dermatitis",
+        "Benign keratosis",
+        "Dermatofibroma",
+        "Melanocytic nevus",
+        "Melanoma",
+        "Squamous cell carcinoma",
+        "Tinea Ringworm Candidiasis",
+        "Vascular lesion",
+        "Basal cell carcinoma",
+        "Eczema",
+        "Psoriasis",
+        "Warts Molluscum"
+    ]
 
     for old, new in replacements.items():
         text = text.replace(old, new)
 
-    return symptoms
+    return text
 import torch.nn as nn
 from torchvision.models import efficientnet_b0
 
