@@ -221,7 +221,7 @@ def load_models():
     skin_model.load_state_dict(torch.load(skin_path, map_location=device))
     skin_model.eval()
 
-   tokenizer = AutoTokenizer.from_pretrained(
+    tokenizer = AutoTokenizer.from_pretrained(
     str(save_dir),
     local_files_only=True,
     use_fast=True
