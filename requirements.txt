@@ -1,5 +1,6 @@
 streamlit==1.56.0
 torch==2.11.0
+ultralytics
 torchvision==0.26.0
 transformers==4.46.3
 safetensors==0.4.5
