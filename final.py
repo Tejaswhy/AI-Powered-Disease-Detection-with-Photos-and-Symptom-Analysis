@@ -649,12 +649,16 @@ from datetime import datetime
 # ==========================================
 # CUSTOM HEALTH REMINDER 
 # ==========================================
+from streamlit_autorefresh import st_autorefresh
+from datetime import datetime
+import streamlit as st
+
 with st.expander("⏰ Open Health Reminder", expanded=False):
 
     st.subheader("⏰ Custom Health Reminder")
 
-    # Auto refresh every 10 seconds
-    st_autorefresh(interval=10000, key="health_reminder_refresh")
+    # Auto refresh every 5 sec
+    st_autorefresh(interval=5000, key="health_reminder_refresh")
 
     if "reminders" not in st.session_state:
         st.session_state.reminders = []
@@ -667,17 +671,50 @@ with st.expander("⏰ Open Health Reminder", expanded=False):
         placeholder="Take medicine / Drink water / Check sugar"
     )
 
-    reminder_date = st.date_input("Reminder Date")
-    reminder_time = st.time_input("Reminder Time")
+    # Custom alarm style time input
+    col_h, col_m, col_ampm = st.columns(3)
+
+    with col_h:
+        hour = st.number_input(
+            "Hour",
+            min_value=1,
+            max_value=12,
+            value=8,
+            step=1
+        )
+
+    with col_m:
+        minute = st.number_input(
+            "Minute",
+            min_value=0,
+            max_value=59,
+            value=0,
+            step=1
+        )
+
+    with col_ampm:
+        period = st.selectbox(
+            "AM/PM",
+            ["AM", "PM"]
+        )
 
     col_rem1, col_rem2 = st.columns(2)
 
     with col_rem1:
-        if st.button("➕ Save Reminder"):
+        if st.button("➕ Save Reminder", key="save_reminder"):
             if reminder_text.strip():
-                reminder_dt = datetime.combine(
-                    reminder_date,
-                    reminder_time
+
+                hour_24 = hour
+                if period == "PM" and hour != 12:
+                    hour_24 += 12
+                elif period == "AM" and hour == 12:
+                    hour_24 = 0
+
+                reminder_dt = datetime.now().replace(
+                    hour=hour_24,
+                    minute=minute,
+                    second=0,
+                    microsecond=0
                 )
 
                 st.session_state.reminders.append({
@@ -688,13 +725,12 @@ with st.expander("⏰ Open Health Reminder", expanded=False):
                 })
 
                 st.toast(
-                    f"⏰ Reminder saved for "
-                    f"{reminder_dt.strftime('%I:%M %p')}",
+                    f"⏰ Reminder saved for {hour}:{minute:02d} {period}",
                     icon="✅"
                 )
 
     with col_rem2:
-        if st.button("🗑 Clear Reminders"):
+        if st.button("🗑 Clear Reminders", key="clear_reminder"):
             st.session_state.reminders = []
             st.session_state.sent_notifications = []
             st.toast("All reminders cleared", icon="🗑")
@@ -714,7 +750,7 @@ with st.expander("⏰ Open Health Reminder", expanded=False):
 
             st.info(
                 f"{idx}. {reminder['text']} ⏰ "
-                f"{reminder_dt.strftime('%d %b %Y %I:%M %p')}"
+                f"{reminder_dt.strftime('%I:%M %p')}"
             )
 
             if (
@@ -728,7 +764,16 @@ with st.expander("⏰ Open Health Reminder", expanded=False):
                 )
 
                 st.warning(
-                    f"Reminder Due: {reminder['text']}"
+                    f"🔔 Reminder Due: {reminder['text']}"
+                )
+
+                st.markdown(
+                    """
+                    <audio autoplay>
+                        <source src="https://www.soundjay.com/buttons/sounds/beep-07.mp3" type="audio/mpeg">
+                    </audio>
+                    """,
+                    unsafe_allow_html=True
                 )
 
                 st.session_state.sent_notifications.append(
