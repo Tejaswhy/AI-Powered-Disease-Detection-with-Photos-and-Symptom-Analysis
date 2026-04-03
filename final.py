@@ -194,7 +194,7 @@ class SkinClassifier(torch.nn.Module):
 # ==========================================
 @st.cache_resource
 def load_models():
-    eye_model = EyeClassifier(5).to(device)
+    eye_model = EyeClassifier(6).to(device)
     eye_model.load_state_dict(torch.load(eye_path, map_location=device))
     eye_model.eval()
 
@@ -202,7 +202,7 @@ def load_models():
     tongue_model.load_state_dict(torch.load(tongue_path, map_location=device))
     tongue_model.eval()
 
-    skin_model = SkinClassifier(9).to(device)
+    skin_model = SkinClassifier(13).to(device)
     skin_model.load_state_dict(
         torch.load(skin_path, map_location=device),
         strict=False
