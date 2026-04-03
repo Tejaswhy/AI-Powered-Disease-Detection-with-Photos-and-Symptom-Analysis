@@ -1,0 +1,9 @@
+streamlit
+torch
+torchvision
+ultralytics
+numpy
+pillow
+transformers
+notifypy
+scikit-learn
